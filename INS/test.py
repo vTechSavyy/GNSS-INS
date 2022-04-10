@@ -3,7 +3,7 @@ import numpy as np
 # Constants: 
 
 # 1. Radius of Earth (meters)
-Re_m = 6,371,000
+Re_m = 6371000
 
 # 2. Rotation rate of earth (rad/sec) 
 omega_e_rps = 7.2921159e-05
@@ -58,6 +58,24 @@ def DCMToLatLong(C_e2n):
 
     return lat, long
 
+def calcEarthRotRateInNavFrame(omega_e_rps, lat_rad):
+
+    res = np.zeros((3,1))
+
+    res[0] = omega_e_rps * np.cos(lat_rad)
+    res[1] = 0.0
+    res[2] = - omega_e_rps * np.sin(lat_rad)
+
+    return res
+
+def caclGravityInNavFrame(lat_rad, omega_e_rps):
+
+    g_n = np.zeros((3,1))
+
+    g_n[2] = -9.81
+
+    return g_n
+
 ## Setup time vector and simulated measurements: 
 fs = 100
 t_0 = 0.0
@@ -71,20 +89,56 @@ accel_meas = np.zeros((3, n_steps))
 gyro_meas  = np.zeros((3, n_steps))
 
 accel_meas[0,:] = 1.5 * np.sin(2 * np.pi * 0.05 * t_vec)
-accel_meas[2,:] = 0.005 * np.ones_like(t_vec)
+accel_meas[2,:] = 0.005 * np.ones_like(t_vec) - 9.81
 
 gyro_meas[2,:] = 0.0001 * np.ones_like(t_vec)
 
 ## Forward propagate the: 
-# 1. Navigation to Earth Frame DCM
-# 2. Velocity vector in navigation frame
-# 3. Body to navigation frame DCM
+# 1. Velocity vector in navigation frame (v_n)
+# 2. Earth Frame to navigation frame DCM (C_e2n)
+# 3. Body frame to navigation frame DCM (C_b2n)
+# 4. Altitude (height)
 
 # 1. Initialize the required state:
-lat_init  = deg2Rad(37.230000) 
-long_init = deg2Rad(-80.417778)
+lat_init_rad  = deg2Rad(37.230000) 
+long_init_rad = deg2Rad(-80.417778)
+height_init_m = 500.0
 
+# Reserve memory and intialize the states at time t = 0
 v_n = np.zeros((3,1))
 C_b2n = np.eye(3)
+C_e2n = latLongToDCM(lat_init_rad, long_init_rad)
+height_m = height_init_m 
 
-C_e2n = latLongToDCM(lat_init, long_init)
+## Going to use simple Euler integration for now:
+## TODO: Put into a for loop. For now just writing down all the equations:
+
+# Extract Lat, long and height from the state: 
+(lat_rad, long_rad) = DCMToLatLong(C_e2n)
+
+# Compute helper variables: 
+omega_en_n = calcTransportRateVec(v_n, lat_rad, long_rad, height_m)
+Omega_ie_n = calcEarthRotRateInNavFrame(omega_e_rps, lat_rad)
+Omega_en_n = vec2skew3d(omega_en_n)
+
+Omega_ib_b = vec2skew3d(gyro_meas)
+
+Omega_n2b_b = Omega_ib_b - np.transpose(C_b2n) @ (Omega_en_n + Omega_ie_n) @ C_b2n
+
+g_n = caclGravityInNavFrame(lat_rad, omega_e_rps)
+
+# Equation #1: 
+v_n_dot = C_b2n @ accel_meas - (Omega_en_n + 2 * Omega_ie_n) @ v_n - g_n
+
+# Equation #2: 
+C_e2n_dot = -1.0 * Omega_en_n @ C_e2n
+
+# Equation #3:
+C_b2n_dot = C_b2n @ Omega_n2b_b
+
+# Equation #4: 
+h_dot = v_n[2]
+
+
+
+
