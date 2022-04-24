@@ -14,13 +14,6 @@ omega_e_rps = 7.2921159e-05  # Units - radians per sec
 dat = gr.load('data/BREW00USA_R_20220311200_01H_GN.rnx')
 
 sv_g01 = dat.sel(sv='G01')
-print(sv_g01['sqrtA'].values)
-print(sv_g01['sqrtA'].coords)
-
-print(sv_g01['M0'].values)
-print(sv_g01['M0'].coords)
-
-print(sv_g01)
 
 # Step 2: Determine the time offset from the Issue of Data Ephemeris 
 Toe = sv_g01['Toe'].values[1]
