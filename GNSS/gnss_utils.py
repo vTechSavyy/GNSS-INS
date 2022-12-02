@@ -7,7 +7,7 @@ from scipy.spatial.transform import Rotation as R
 
 ## Constants: 
 mu = 3986004.418E+08         # mu = G* M_E (Units - m^3/s^2)
-omega_e_rps = 7.2921159e-05  # Units - radians per sec
+omega_e_rps = -7.2921159e-05  # Units - radians per sec
 WEEKSEC = 604800
 C = 3E+08
 
@@ -42,6 +42,7 @@ def getSatelliteCoordsFromRinex(t, svid, rinex_filename):
 
     t_k = t*1E-09 - Toe
 
+    print(' T_oe = ', Toe)
     print('T_k = ', t_k)
 
     # Step 3: Determine the mean anomaly
@@ -49,9 +50,11 @@ def getSatelliteCoordsFromRinex(t, svid, rinex_filename):
     delta_n = sv_g01['DeltaN'].values[validIdx]
     M0 = sv_g01['M0'].values[validIdx]
 
+    print (' Semi-major axis a = ', sqrtA**2)
+
     Mk = M0 + (np.sqrt(mu)/ np.power(sqrtA, 3) + delta_n) * t_k
 
-    # print(' Mean anomaly is: ', Mk)
+    print(' Mean anomaly is: ', Mk)
 
     # Step 4: Determine the true anomaly:
     e = sv_g01['Eccentricity'].values[validIdx]
@@ -60,13 +63,14 @@ def getSatelliteCoordsFromRinex(t, svid, rinex_filename):
 
     Ek = res.x[0]
 
-    # print(' Eccentric anomaly is', Ek)
+    print(' Eccentric anomaly is', Ek)
 
     numerator = np.sqrt(1 - np.power(e,2)) * np.sin(Ek)
     denominator = np.cos(Ek) - e
-    vk = np.arctan(numerator/denominator)  # True anomaly
+    vk = np.arctan(numerator/denominator) # True anomaly
 
-    # print(' True anomaly is ', vk)
+
+    print(' True anomaly is ', vk)
 
     # Step 5: Compute the radial distance of the satellite from the focus of the ellipse (Take into account harmonic corrections)
     Crc = sv_g01['Crc'].values[validIdx]
@@ -75,16 +79,17 @@ def getSatelliteCoordsFromRinex(t, svid, rinex_filename):
 
     angle_r = 2* (omega + vk)
 
-    rk = sqrtA**2 * (1 -e* np.cos(Ek)) + Crc * np.cos(angle_r) + Crs * np.sin(angle_r)
+    rk = sqrtA**2 * (1 - e * np.cos(Ek)) + Crc * np.cos(angle_r) + Crs * np.sin(angle_r)
 
-    # print(' Radial distance is: ', rk)
+    print(' Radial distance is: ', rk)
 
     # Step 6: Compute the argument of latitude (uk) using the argument of perigee, true anomaly and harmonic corrections
     Cuc = sv_g01['Cuc'].values[validIdx]
     Cus = sv_g01['Cus'].values[validIdx]
+
     uk = omega + vk + Cuc * np.cos(angle_r) + Cus * np.sin(angle_r)
 
-    # print(' Argument of latitude is: ', uk)
+    print(' Argument of latitude is: ', uk)
 
     # Step 7: Compute the inclination of the satellite orbital plane (ik) at the current time. 
     idot = sv_g01['IDOT'].values[validIdx]
@@ -95,7 +100,7 @@ def getSatelliteCoordsFromRinex(t, svid, rinex_filename):
 
     ik = i0 + idot * t_k + Cic * np.cos(angle_r) + Cis * np.sin(angle_r)
 
-    # print(' Inclination of orbit plane : ', ik)
+    print(' Inclination of orbit plane : ', ik)
 
     # Step 8: Compute the longitude of ascending node (lk) with respect to Greenwich
     Omega0 = sv_g01['Omega0'].values[validIdx]
@@ -103,7 +108,7 @@ def getSatelliteCoordsFromRinex(t, svid, rinex_filename):
 
     lk = Omega0 + (OmegaDot - omega_e_rps) * t_k - omega_e_rps * Toe
 
-    # print(' Longitude of ascending node is: ', lk)
+    print(' Longitude of ascending node is: ', lk)
 
     # Step 9: Compute rotation matrices
 

@@ -74,9 +74,11 @@ print(' -      --------------------- ')
 
 # Step 2: Read in the nav file using geo-rinex:
 r_ecef_03 = getSatelliteCoordsFromRinex(88810344022050, 3, 'data/IISC00IND_R_20221080000_01H_GN.rnx')
-r_ecef_04 = getSatelliteCoordsFromRinex(88810345405825, 4, 'data/IISC00IND_R_20221080000_01H_GN.rnx')
+# r_ecef_04 = getSatelliteCoordsFromRinex(88810345405825, 4, 'data/IISC00IND_R_20221080000_01H_GN.rnx')
+r_ecef_04 = getSatelliteCoordsFromRinex(88810345405825, 1, 'data/IISC00IND_R_20221080000_01H_GN.rnx')
 r_ecef_07 = getSatelliteCoordsFromRinex(88810333994443, 7, 'data/IISC00IND_R_20221080000_01H_GN.rnx')
-r_ecef_08 = getSatelliteCoordsFromRinex(88810343306344, 8, 'data/IISC00IND_R_20221080000_01H_GN.rnx')
+# r_ecef_08 = getSatelliteCoordsFromRinex(88810343306344, 8, 'data/IISC00IND_R_20221080000_01H_GN.rnx')
+r_ecef_08 = getSatelliteCoordsFromRinex(88810343306344, 9, 'data/IISC00IND_R_20221080000_01H_GN.rnx')
 
 # Step 3: Compute the pseudo range for each GPS satellite:  
 rho_03 = computePseudoRange(gps_raw_meas, str(3), str(1650242392415))
@@ -90,10 +92,10 @@ Rho_meas[1] = rho_04
 Rho_meas[2] = rho_07
 Rho_meas[3] = rho_08
 
-print(' Rho SV 03 = ', rho_03)
-print(' Rho SV 04 = ', rho_04)
-print(' Rho SV 07 = ', rho_07)
-print(' Rho SV 08 = ', rho_08)
+# print(' Rho SV 03 = ', rho_03)
+# print(' Rho SV 04 = ', rho_04)
+# print(' Rho SV 07 = ', rho_07)
+# print(' Rho SV 08 = ', rho_08)
 
 # Step 4: Set an initial guess:
 chennai_lat = deg2Rad(13.067439)
@@ -108,6 +110,11 @@ norm_03 = np.linalg.norm(r_ecef_03 - r_ecef_0)
 norm_04 = np.linalg.norm(r_ecef_04 - r_ecef_0)
 norm_07 = np.linalg.norm(r_ecef_07 - r_ecef_0)
 norm_08 = np.linalg.norm(r_ecef_08 - r_ecef_0)
+
+print(' Rho ref SV 03 = ', norm_03)
+print(' Rho ref SV 04 = ', norm_04)
+print(' Rho ref SV 07 = ', norm_07)
+print(' Rho ref SV 08 = ', norm_08)
 
 Rho_ref = np.zeros((4,1))
 Rho_ref[0] = norm_03
